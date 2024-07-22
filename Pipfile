@@ -6,6 +6,10 @@ name = "pypi"
 [packages]
 mediapipe = "*"
 opencv-python = "*"
+numpy = "*"
+pandas = "*"
+tensorflow = "*"
+scikit-learn = "*"
 
 [dev-packages]
 
