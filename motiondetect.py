@@ -9,9 +9,10 @@ mp_drawing = mp.solutions.drawing_utils
 cap = cv2.VideoCapture(0)
 
 with mp_hands.Hands(
-    max_num_hands=8,
+    max_num_hands=2, 
     min_detection_confidence=0.5,
-    min_tracking_confidence=0.5) as hands:
+    min_tracking_confidence=0.5
+) as hands:
 
     while cap.isOpened():
         ret, frame = cap.read()
@@ -26,6 +27,19 @@ with mp_hands.Hands(
         
         # Process the image and detect hands
         results = hands.process(frame_rgb)
+        if results.multi_hand_landmarks:
+            for hand_landmarks in results.multi_hand_landmarks:
+                mp_drawing.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
+                
+                # Display numbers below each landmark
+                for idx, landmark in enumerate(hand_landmarks.landmark):
+                    # Convert landmark points to pixel coordinates
+                    height, width, _ = frame.shape
+                    cx, cy = int(landmark.x * width), int(landmark.y * height)
+                    
+                    # Display the index number below the point
+                    cv2.putText(frame, str(f"{idx} {landmark.x:.2f} {landmark.y:.2f}"), (cx, cy + 20), cv2.FONT_HERSHEY_SIMPLEX, 
+                                0.5, (0, 255, 0), 1, cv2.LINE_AA)
 
         # Draw hand landmarks
         if results.multi_hand_landmarks:
