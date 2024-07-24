@@ -18,38 +18,34 @@ def normalize_landmarks(landmarks):
 
 
 def add_csv_header(csvwriter):
-    columntype = ["hand1-x", "hand1-y","hand2-x", "hand2-y","handdistance-"]
+    columntype = ["hand1-x", "hand1-y", "hand2-x", "hand2-y", "handdistance"]
     header_row = ["y"]
 
     for ct in columntype:
-        subrow = []
         for c in range(0, 21):
-            subrow.append(ct + str(c))
-            header_row.extend(subrow)
-        header_row.extend(subrow)
+            header_row.append(ct + str(c))
     
     csvwriter.writerow(header_row)
 
 def add_csv_body(csvwriter, classnum, multi_hand_landmarks):
     body_row = [classnum]
 
-    # loop 2 hand, if only one will duplicate
+    # Loop through each hand, if only one will duplicate
     for ihand, hand_landmarks in enumerate(multi_hand_landmarks):
         handList = []
-        for axis in range(0, 2):  #x, y, z
+        for axis in range(0, 2):  # x, y
             normalized_landmarks = normalize_landmarks(hand_landmarks.landmark)
             for idx, landmark in enumerate(hand_landmarks.landmark):
                 handList.append(normalized_landmarks[idx][axis])
         body_row.extend(handList)
 
-        # duplicate อีกข้าง
-        if(len(multi_hand_landmarks) <= 1):
+        # Duplicate the other hand if only one is detected
+        if len(multi_hand_landmarks) <= 1:
             body_row.extend(handList)
     
-    
-    # loop check distance
+    # Calculate distances between corresponding landmarks of the two hands
     for i in range(1, 22):
-        body_row.append(((body_row[i+42]-body_row[i])**2 + (body_row[i+63]-body_row[i+21])**2)**0.5)
+        body_row.append(((body_row[i + 42] - body_row[i])**2 + (body_row[i + 63] - body_row[i + 21])**2)**0.5)
 
     csvwriter.writerow(body_row)
 
@@ -103,31 +99,30 @@ def open_camera():
                     for hand_landmarks in results.multi_hand_landmarks:
                         mp_drawing.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
 
-                # Display Class and CountDown
+                # Display Class and Countdown
                 cv2.putText(frame, str(classnum), 
                     (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
-                if(countdown>0):
-                    cv2.putText(frame, str(countdown//10), 
-                        (width-20, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
-                    countdown-=1
+                if(countdown > 0):
+                    cv2.putText(frame, str(countdown // 10), 
+                        (width - 20, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
+                    countdown -= 1
 
-                if(countdown==0):
+                if countdown == 0:
                     add_csv_body(csvwriter, classnum, results.multi_hand_landmarks)
                     countdown = -1
 
                 # Check Key Press
                 key = cv2.waitKey(5) & 0xFF
-                if key == 27: # Add +1 when Press Esc
+                if key == 27:  # Press Esc to exit
                     break
-                elif key == ord('c'): # Add +1 Class when Press C
-                    classnum = classnum+1 if classnum+1<=10 else 1
-                elif key == 32: # Shutter when Press SpaceBar
+                elif key == ord('c'):  # Press 'C' to increment class number
+                    classnum = classnum + 1 if classnum + 1 <= 10 else 1
+                elif key == 32:  # Press Spacebar to start countdown
                     countdown = 50
 
                 # Display the resulting frame
                 cv2.imshow('Hand Detection', frame)
-                    
-
+    
     # Release the capture and close the windows
     cap.release()
     cv2.destroyAllWindows()
