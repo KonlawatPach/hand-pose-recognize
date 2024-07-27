@@ -58,8 +58,8 @@ def open_camera():
 
     with mp_hands.Hands(
         max_num_hands=2, 
-        min_detection_confidence=0.5,
-        min_tracking_confidence=0.5
+        min_detection_confidence=0.7,
+        min_tracking_confidence=0.7
     ) as hands:
     
         # Open a CSV file to save landmark data
@@ -91,8 +91,8 @@ def open_camera():
                         for idx, landmark in enumerate(hand_landmarks.landmark):
                             # Convert landmark points to pixel coordinates
                             cx, cy = int(landmark.x * width), int(landmark.y * height)
-                            cv2.putText(frame, str(f"{idx} {normalized_landmarks[idx][0]:.2f} {normalized_landmarks[idx][1]:.2f}"), 
-                                (cx, cy + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
+                            # cv2.putText(frame, str(f"{idx} {normalized_landmarks[idx][0]:.2f} {normalized_landmarks[idx][1]:.2f}"), 
+                            #     (cx, cy + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
                             if(idx == 0):
                                 cv2.putText(frame, str(ihand+1), 
                                 (cx, cy + 40), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
@@ -106,7 +106,8 @@ def open_camera():
                     countdown-=1
 
                 if(countdown==0):
-                    add_csv_body(csvwriter, classnum, results.multi_hand_landmarks)
+                    if results.multi_hand_landmarks:
+                        add_csv_body(csvwriter, classnum, results.multi_hand_landmarks)
                     countdown = -1
 
                 # Check Key Press
