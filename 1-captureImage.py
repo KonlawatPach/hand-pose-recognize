@@ -25,7 +25,6 @@ def add_csv_header(csvwriter):
         subrow = []
         for c in range(0, 21):
             subrow.append(ct + str(c))
-            header_row.extend(subrow)
         header_row.extend(subrow)
     
     csvwriter.writerow(header_row)
@@ -87,6 +86,7 @@ def open_camera():
                 if results.multi_hand_landmarks:
                     for ihand, hand_landmarks in enumerate(results.multi_hand_landmarks):
                         normalized_landmarks = normalize_landmarks(hand_landmarks.landmark)
+                        mp_drawing.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
 
                         for idx, landmark in enumerate(hand_landmarks.landmark):
                             # Convert landmark points to pixel coordinates
@@ -96,12 +96,6 @@ def open_camera():
                             if(idx == 0):
                                 cv2.putText(frame, str(ihand+1), 
                                 (cx, cy + 40), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
-
-
-                # Draw hand landmarks
-                if results.multi_hand_landmarks:
-                    for hand_landmarks in results.multi_hand_landmarks:
-                        mp_drawing.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
 
                 # Display Class and CountDown
                 cv2.putText(frame, str(classnum), 
