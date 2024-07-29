@@ -20,7 +20,9 @@ while cap.isOpened():
     image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     results = hands.process(image_rgb)
 
-    if results.multi_hand_landmarks:
+    hand_detected = results.multi_hand_landmarks is not None
+
+    if hand_detected:
         for hand_landmarks in results.multi_hand_landmarks:
             # Get bounding box coordinates
             x_coords = [landmark.x for landmark in hand_landmarks.landmark]
@@ -43,10 +45,14 @@ while cap.isOpened():
             # Draw hand landmarks
             mp_drawing.draw_landmarks(image, hand_landmarks, mp_hands.HAND_CONNECTIONS, landmark_drawing_spec=None, connection_drawing_spec=drawing_utils)
 
+    # Display the text on the image
+    text = f'Hand Detected: {hand_detected}'
+    cv2.putText(image, text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+
     # Show the image
     cv2.imshow('Hand Tracking', image)
 
-    if cv2.waitKey(1) & 0xFF == 27:
+    if cv2.waitKey(1) & 0xFF == 27:  # Press 'Esc' to exit
         break
 
 cap.release()
