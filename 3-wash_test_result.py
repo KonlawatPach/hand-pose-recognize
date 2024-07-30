@@ -15,13 +15,13 @@ mp_drawing = mp.solutions.drawing_utils
 cap = cv2.VideoCapture(0)
 
 # Load Model & Scaler
-with open('model.pkl', 'rb') as file:
+with open('model-wash.pkl', 'rb') as file:
     model = pickle.load(file)
-with open('scaler.pkl', 'rb') as file:
+with open('scalar.pkl', 'rb') as file:
     scaler = pickle.load(file)
 
 # ล้างมือกี่วินาที
-timeflame_success_perhand = 80
+timeflame_success_perhand = 10
 class_count = len(model.classes_)
 hand_success = [0] * class_count
 
@@ -43,10 +43,10 @@ def check_hand_success(frame, width, height):
             count_hand_success += 1
 
     if(count_hand_success < class_count):
-        frame = put_text_pil(frame, "ประสานอินไม่สะอาด\nไปประสานอินใหม่นะ", 
+        frame = put_text_pil(frame, "ล้างมือไม่สะอาด\nไปล้างมือใหม่นะ", 
             (width//4.5, height//2), font_size=60, color=(255, 0, 0))
     else:
-        frame = put_text_pil(frame, "ประสานอินได้เยี่ยมมาก", 
+        frame = put_text_pil(frame, "ล้างมือได้ยอดเยี่ยมมาก", 
             (width//4.8, height//2), font_size=60, color=(0, 255, 0))
     return frame
 
@@ -64,15 +64,25 @@ def put_text_pil(img, text, position, font_size=20, color=(0, 0, 255)):
     draw.text(position, text, font=font, fill=color)
     return cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
 
+def check_move(last, now):
+    absolute_differences = [abs(a - b) for a, b in zip(last, now)]
+    total_difference = sum(absolute_differences)
+    if(total_difference > 2):
+        return True
+    return False
+
+last_hand_position = None
 def check_class(frame, multi_hand_landmarks):
+    global last_hand_position
     input_x = []
     for ihand, hand_landmarks in enumerate(multi_hand_landmarks):
-        handList = []
-        for axis in range(0, 2):  #x, y, z
-            normalized_landmarks = normalize_landmarks(hand_landmarks.landmark)
-            for idx, landmark in enumerate(hand_landmarks.landmark):
-                handList.append(normalized_landmarks[idx][axis])
-        input_x.extend(handList)
+        if(ihand < 2):
+            handList = []
+            for axis in range(0, 2):  #x, y, z
+                normalized_landmarks = normalize_landmarks(hand_landmarks.landmark)
+                for idx, landmark in enumerate(hand_landmarks.landmark):
+                    handList.append(normalized_landmarks[idx][axis])
+            input_x.extend(handList)
 
         # duplicate อีกข้าง
         if(len(multi_hand_landmarks) <= 1):
@@ -83,13 +93,17 @@ def check_class(frame, multi_hand_landmarks):
         input_x.append(((input_x[i+41]-input_x[i])**2 + (input_x[i+62]-input_x[i+20])**2)**0.5)
     
     try:
-        new_data = np.array(input_x).reshape(1, -1)
-        new_data_normalized = scaler.transform(new_data)
-        y_pred = model.predict(new_data_normalized)
+        if(last_hand_position == None or check_move(input_x, last_hand_position)):
+            new_data = np.array(input_x).reshape(1, -1)
+            new_data_normalized = scaler.transform(new_data)
+            y_pred = model.predict(new_data_normalized)
+            last_hand_position = input_x
 
-        add_hand_success(y_pred[0])
+            add_hand_success(y_pred[0])
+            return True
     except:
         print(input_x)
+    return False
 
 def open_camera():
     with mp_hands.Hands(
@@ -117,11 +131,13 @@ def open_camera():
             if results.multi_hand_landmarks:
                 if(countdown <= 0):
                     reset_hand_success()
-                countdown = 80
-                for ihand, hand_landmarks in enumerate(results.multi_hand_landmarks):
-                    normalized_landmarks = normalize_landmarks(hand_landmarks.landmark)
+                
+                if(check_class(frame, results.multi_hand_landmarks)):
+                    countdown = 80
+
+                # Draw Hand Point
+                for hand_landmarks in results.multi_hand_landmarks:
                     mp_drawing.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
-                check_class(frame, results.multi_hand_landmarks)
                 
             if(countdown>0):
                 cv2.putText(frame, str(countdown//10), 

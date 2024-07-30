@@ -13,7 +13,7 @@ mp_drawing = mp.solutions.drawing_utils
 # Load Model & Scaler
 with open('model.pkl', 'rb') as file:
     model = pickle.load(file)
-with open('scaler.pkl', 'rb') as file:
+with open('scalar.pkl', 'rb') as file:
     scaler = pickle.load(file)
 
 # Start video capture
@@ -50,7 +50,7 @@ def display_class(frame, multi_hand_landmarks):
         y_pred = model.predict(new_data_normalized)
         
         # Display Class
-        cv2.putText(frame, str(f"Class : .{y_pred[0]}"), 
+        cv2.putText(frame, str(f"Class : {y_pred[0]}"), 
             (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 255, 0), 1, cv2.LINE_AA)
     except:
         print(input_x)

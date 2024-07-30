@@ -8,7 +8,8 @@ mp_drawing = mp.solutions.drawing_utils
 
 # Start video capture
 cap = cv2.VideoCapture(0)
-
+autocountdown = False
+takeimage = [0] * 10
 
 def normalize_landmarks(landmarks):
     # Using the wrist landmark (index 0) as the reference point
@@ -34,16 +35,17 @@ def add_csv_body(csvwriter, classnum, multi_hand_landmarks):
 
     # loop 2 hand, if only one will duplicate
     for ihand, hand_landmarks in enumerate(multi_hand_landmarks):
-        handList = []
-        for axis in range(0, 2):  #x, y, z
-            normalized_landmarks = normalize_landmarks(hand_landmarks.landmark)
-            for idx, landmark in enumerate(hand_landmarks.landmark):
-                handList.append(normalized_landmarks[idx][axis])
-        body_row.extend(handList)
-
-        # duplicate อีกข้าง
-        if(len(multi_hand_landmarks) <= 1):
+        if(ihand < 2):
+            handList = []
+            for axis in range(0, 2):  #x, y, z
+                normalized_landmarks = normalize_landmarks(hand_landmarks.landmark)
+                for idx, landmark in enumerate(hand_landmarks.landmark):
+                    handList.append(normalized_landmarks[idx][axis])
             body_row.extend(handList)
+
+            # duplicate อีกข้าง
+            if(len(multi_hand_landmarks) <= 1):
+                body_row.extend(handList)
     
     
     # loop check distance
@@ -51,8 +53,11 @@ def add_csv_body(csvwriter, classnum, multi_hand_landmarks):
         body_row.append(((body_row[i+42]-body_row[i])**2 + (body_row[i+63]-body_row[i+21])**2)**0.5)
 
     csvwriter.writerow(body_row)
+    takeimage[classnum-1] += 1
+    print(takeimage)
 
 def open_camera():
+    global autocountdown
     countdown = -1
     classnum = 1
 
@@ -106,9 +111,11 @@ def open_camera():
                     countdown-=1
 
                 if(countdown==0):
-                    if results.multi_hand_landmarks:
+                    if results.multi_hand_landmarks: #and len(results.multi_hand_landmarks) == 2:
                         add_csv_body(csvwriter, classnum, results.multi_hand_landmarks)
                     countdown = -1
+                    if(autocountdown):
+                        countdown = 20
 
                 # Check Key Press
                 key = cv2.waitKey(5) & 0xFF
@@ -116,6 +123,8 @@ def open_camera():
                     break
                 elif key == ord('c'): # Add +1 Class when Press C
                     classnum = classnum+1 if classnum+1<=10 else 1
+                elif key == ord('a'): # Change to auto when Press A
+                    autocountdown = True if autocountdown==False else False
                 elif key == 32: # Shutter when Press SpaceBar
                     countdown = 50
 
