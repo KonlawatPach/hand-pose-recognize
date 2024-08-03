@@ -11,7 +11,7 @@ mp_hands = mp.solutions.hands
 mp_drawing = mp.solutions.drawing_utils
 
 # Load Model & Scaler
-with open('model.pkl', 'rb') as file:
+with open('model-wash.pkl', 'rb') as file:
     model = pickle.load(file)
 with open('scalar.pkl', 'rb') as file:
     scaler = pickle.load(file)
